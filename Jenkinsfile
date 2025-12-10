@@ -6,42 +6,57 @@ pipeline {
   }
 
   stages {
+
+    /* ===========================================
+       FIXED BUILD STAGE (runs on slave-node-1)
+       =========================================== */
     stage('Checkout + Build Docker (on slave)') {
-      agent { label 'slave-node-1' }           // run on your slave (where Docker is installed)
+      agent { label 'slave-node-1' }
+
       steps {
-        // If you use HTTPS credentials in Jenkins, replace url with credentialsId in git step
         git branch: 'master',
             url: 'https://github.com/Mahesh6-web/AWS_DevOps_Certification_Project.git',
-            credentialsId: 'github-https-credential'  // optional — use your HTTPS credential if required
+            credentialsId: 'github-https-credential'
+
         sh '''
-          cd website
-          docker build -t phpwebapp .
+          echo "=== WORKSPACE CONTENTS ==="
+          pwd
+          ls -la
+
+          echo "=== website directory ==="
+          ls -la website || true
+
+          # Build Docker image using Dockerfile in repo root
+          docker build -t phpwebapp -f Dockerfile .
         '''
       }
     }
 
+    /* OPTIONAL – disabled push */
     stage('Push image (optional)') {
-      agent { label 'slave-node-1' } // only if you push to registry from slave
-      when { expression { false } }  // disable by default; enable if you want to push to Docker Hub/ACR
+      agent { label 'slave-node-1' }
+      when { expression { false } } // disabled unless you enable pushing to a registry
       steps {
         sh '''
-          # docker login ...  (uncomment and fill if pushing)
+          # docker login ...
           # docker tag phpwebapp yourrepo/phpwebapp:tag
           # docker push yourrepo/phpwebapp:tag
         '''
       }
     }
 
+    /* ===========================================
+       ANSIBLE DEPLOY STAGE (runs on master)
+       =========================================== */
     stage('Deploy using Ansible (on master/controller)') {
-      agent { label 'built-in' }  // run on controller (built-in), where ansible is installed
+      agent { label 'built-in' }
       steps {
-        // Inventory/deploy.yml are on master per your previous steps (/home/ubuntu/deploy.yml)
         sh '''
           ansible-playbook /home/ubuntu/deploy.yml -i /etc/ansible/hosts
         '''
       }
     }
-  } // stages
+  }
 
   post {
     always {
