@@ -1,27 +1,26 @@
 pipeline {
     agent any
 
+    environment {
+        ANSIBLE_HOST_KEY_CHECKING = 'False'
+    }
+
     stages {
-        stage('Checkout') {
-            steps {
-                git branch: 'master',
-                    url: 'git@github.com:Mahesh6-web/AWS_DevOps_Certification_Project.git'
-            }
-        }
 
         stage('Build Docker Image') {
             steps {
-                sh """
+                sh '''
+                    cd website
                     docker build -t phpwebapp .
-                """
+                '''
             }
         }
 
         stage('Deploy using Ansible') {
             steps {
-                sh """
+                sh '''
                     ansible-playbook /home/ubuntu/deploy.yml
-                """
+                '''
             }
         }
     }
