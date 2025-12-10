@@ -9,6 +9,7 @@ pipeline {
 
         stage('Checkout + Build Docker (on slave)') {
             agent { label 'slave-node-1' }
+
             steps {
                 git branch: 'master',
                     url: 'https://github.com/Mahesh6-web/AWS_DevOps_Certification_Project.git',
@@ -28,6 +29,7 @@ pipeline {
 
         stage('Deploy using Ansible (on master/controller)') {
             agent { label 'built-in' }
+
             steps {
                 sh '''
                     ansible-playbook /var/lib/jenkins/deploy.yml -i /etc/ansible/hosts
